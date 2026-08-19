@@ -19,7 +19,9 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    debugPrint('Firebase initialization notice: $e (Operating in offline-first mode)');
+    debugPrint(
+      'Firebase initialization notice: $e (Operating in offline-first mode)',
+    );
   }
 
   // Initialize Dependency Injection container
@@ -35,9 +37,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ThemeCubit>(
-          create: (_) => sl<ThemeCubit>(),
-        ),
+        BlocProvider<ThemeCubit>(create: (_) => sl<ThemeCubit>()),
         BlocProvider<TaskBloc>(
           create: (_) => sl<TaskBloc>()..add(const LoadTasksEvent()),
         ),

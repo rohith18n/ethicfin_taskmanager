@@ -33,6 +33,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   late DateTime _selectedDueDate;
   late bool _isCompleted;
   bool _isSaving = false;
+  String? _dueDateError;
+
+  static const int _maxTitleLength = 80;
+  static const int _maxDescriptionLength = 500;
 
   @override
   void initState() {
@@ -53,11 +57,26 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     super.dispose();
   }
 
+  void _validateDueDate() {
+    if (!widget.isEditing && _selectedDueDate.isBefore(DateTime.now().subtract(const Duration(minutes: 1)))) {
+      setState(() {
+        _dueDateError = 'Due date must be in the future';
+      });
+    } else {
+      if (_dueDateError != null) {
+        setState(() {
+          _dueDateError = null;
+        });
+      }
+    }
+  }
+
   Future<void> _pickDueDate() async {
+    final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDueDate,
-      firstDate: DateTime(2020),
+      initialDate: _selectedDueDate.isBefore(now) ? now : _selectedDueDate,
+      firstDate: widget.isEditing ? DateTime(2020) : DateTime(now.year, now.month, now.day),
       lastDate: DateTime(2040),
     );
 
@@ -79,10 +98,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         pickedTime.minute,
       );
     });
+
+    _validateDueDate();
   }
 
   void _saveTask() {
-    if (!_formKey.currentState!.validate()) {
+    _validateDueDate();
+
+    if (!_formKey.currentState!.validate() || _dueDateError != null) {
       return;
     }
 
@@ -168,28 +191,51 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
           padding: const EdgeInsets.all(20),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title Field
-                Text(
-                  'Task Title *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                  ),
+                // Title Field Header with Live Counter
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _titleController,
+                  builder: (context, value, _) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Task Title *',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                        Text(
+                          '${value.text.length}/$_maxTitleLength',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: value.text.length > _maxTitleLength
+                                ? AppColors.error
+                                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleController,
                   textInputAction: TextInputAction.next,
+                  maxLength: _maxTitleLength,
                   style: TextStyle(
                     color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                     fontSize: 15,
                   ),
                   decoration: const InputDecoration(
-                    hintText: 'e.g., Complete financial compliance report',
+                    hintText: 'e.g., Complete quarterly tax audit',
+                    counterText: '', // hidden default counter since custom is shown above
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -198,31 +244,56 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     if (value.trim().length < 3) {
                       return 'Title must be at least 3 characters';
                     }
+                    if (value.trim().length > _maxTitleLength) {
+                      return 'Title cannot exceed $_maxTitleLength characters';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Description Field
-                Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                  ),
+                // Description Field with Live Counter
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _descriptionController,
+                  builder: (context, value, _) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Description *',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                        Text(
+                          '${value.text.length}/$_maxDescriptionLength',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: value.text.length > _maxDescriptionLength
+                                ? AppColors.error
+                                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 4,
+                  maxLength: _maxDescriptionLength,
                   textInputAction: TextInputAction.newline,
                   style: TextStyle(
                     color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                     fontSize: 15,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Add details, requirements, or links...',
+                    hintText: 'Add details, requirements, or reference links...',
+                    counterText: '',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -235,13 +306,33 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                       borderRadius: BorderRadius.circular(16),
                       borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+                    ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a task description';
+                    }
+                    if (value.trim().length < 5) {
+                      return 'Description must be at least 5 characters';
+                    }
+                    if (value.trim().length > _maxDescriptionLength) {
+                      return 'Description cannot exceed $_maxDescriptionLength characters';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 24),
 
                 // Priority Selection
                 Text(
-                  'Priority Level',
+                  'Priority Level *',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -328,7 +419,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
                 // Due Date & Time Picker
                 Text(
-                  'Due Date & Time',
+                  'Due Date & Time *',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -349,13 +440,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           ? AppColors.darkInputFill
                           : AppColors.lightInputFill,
                       borderRadius: BorderRadius.circular(28),
+                      border: _dueDateError != null
+                          ? Border.all(color: AppColors.error, width: 1.5)
+                          : null,
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today_rounded,
                           size: 18,
-                          color: AppColors.primary,
+                          color: _dueDateError != null ? AppColors.error : AppColors.primary,
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -369,18 +463,32 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           ),
                         ),
                         const Spacer(),
-                        const Text(
+                        Text(
                           'Change',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: _dueDateError != null ? AppColors.error : AppColors.primary,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+                if (_dueDateError != null) ...[
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Text(
+                      _dueDateError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
 
                 // Status Toggle if editing

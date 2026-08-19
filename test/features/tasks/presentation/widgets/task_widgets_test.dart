@@ -1,3 +1,4 @@
+import 'package:ethicfin_taskmanager/core/theme/theme_cubit.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/entities/task_entity.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/enums/task_priority.dart';
 import 'package:ethicfin_taskmanager/features/tasks/presentation/bloc/task_bloc.dart';
@@ -66,8 +67,11 @@ void main() {
   testWidgets('TaskFormScreen shows validation error when title is empty', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider<TaskBloc>.value(
-          value: mockTaskBloc,
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+            BlocProvider<TaskBloc>.value(value: mockTaskBloc),
+          ],
           child: const TaskFormScreen(),
         ),
       ),
@@ -81,5 +85,32 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Please enter a task title'), findsOneWidget);
+    expect(find.text('Please enter a task description'), findsOneWidget);
+  });
+
+  testWidgets('TaskFormScreen shows validation error when description is too short', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+            BlocProvider<TaskBloc>.value(value: mockTaskBloc),
+          ],
+          child: const TaskFormScreen(),
+        ),
+      ),
+    );
+
+    // Enter valid title but short description
+    await tester.enterText(find.byType(TextFormField).first, 'Valid Title');
+    await tester.enterText(find.byType(TextFormField).at(1), 'abc');
+    await tester.pumpAndSettle();
+
+    final saveButton = find.widgetWithText(ElevatedButton, 'Create Task');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Description must be at least 5 characters'), findsOneWidget);
   });
 }

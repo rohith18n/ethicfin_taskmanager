@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/task_entity.dart';
 import '../bloc/task_bloc.dart';
@@ -70,6 +72,20 @@ class TaskDetailScreen extends StatelessWidget {
                 tooltip: 'Delete Task',
                 onPressed: () => _confirmDelete(context, task!),
               ),
+              BlocBuilder<ThemeCubit, ThemeMode>(
+                builder: (context, themeMode) {
+                  return IconButton(
+                    tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                    icon: Icon(
+                      isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    ),
+                    onPressed: () {
+                      context.read<ThemeCubit>().toggleTheme();
+                    },
+                  );
+                },
+              ),
               const SizedBox(width: 8),
             ],
           ),
@@ -98,7 +114,7 @@ class TaskDetailScreen extends StatelessWidget {
                     children: [
                       Icon(
                         task.isCompleted
-                            ? Icons.done_all_rounded
+                            ? Icons.check_circle_rounded
                             : (isOverdue
                                 ? Icons.warning_amber_rounded
                                 : Icons.schedule_rounded),
@@ -211,7 +227,7 @@ class TaskDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkInputFill : AppColors.lightInputFill,
                     borderRadius: BorderRadius.circular(16),
@@ -219,64 +235,155 @@ class TaskDetailScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       _buildMetadataRow(
+                        context: context,
                         icon: Icons.calendar_today_rounded,
                         label: 'Due Date',
-                        value: DateFormatter.formatDateTime(task.dueDate),
-                        trailing: Text(
-                          DateFormatter.formatRelative(task.dueDate),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isOverdue ? AppColors.error : AppColors.primary,
-                          ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              DateFormatter.formatRelative(task.dueDate),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isOverdue ? AppColors.error : AppColors.primary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Divider(
-                        height: 20,
+                        height: 18,
                         color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
                       ),
                       _buildMetadataRow(
+                        context: context,
                         icon: Icons.add_circle_outline_rounded,
                         label: 'Created Date',
                         value: DateFormatter.formatDateTime(task.createdAt),
                       ),
                       Divider(
-                        height: 20,
+                        height: 18,
                         color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
                       ),
                       _buildMetadataRow(
+                        context: context,
                         icon: Icons.update_rounded,
                         label: 'Last Updated',
                         value: DateFormatter.formatDateTime(task.updatedAt),
                       ),
                       Divider(
-                        height: 20,
+                        height: 18,
                         color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
                       ),
                       _buildMetadataRow(
+                        context: context,
                         icon: Icons.cloud_sync_rounded,
                         label: 'Sync Status',
-                        value: task.isSynced && task.syncAction == 'NONE'
-                            ? 'Synced with Firestore'
-                            : 'Pending offline sync',
-                        trailing: Icon(
-                          task.isSynced && task.syncAction == 'NONE'
-                              ? Icons.check_circle_rounded
-                              : Icons.cloud_upload_outlined,
-                          size: 18,
-                          color: task.isSynced && task.syncAction == 'NONE'
-                              ? AppColors.synced
-                              : AppColors.warning,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              task.isSynced && task.syncAction == 'NONE'
+                                  ? 'Synced'
+                                  : 'Pending sync',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: task.isSynced && task.syncAction == 'NONE'
+                                    ? AppColors.synced
+                                    : AppColors.warning,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              task.isSynced && task.syncAction == 'NONE'
+                                  ? Icons.check_circle_rounded
+                                  : Icons.cloud_upload_outlined,
+                              size: 16,
+                              color: task.isSynced && task.syncAction == 'NONE'
+                                  ? AppColors.synced
+                                  : AppColors.warning,
+                            ),
+                          ],
                         ),
                       ),
                       Divider(
-                        height: 20,
+                        height: 18,
                         color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
                       ),
-                      _buildMetadataRow(
-                        icon: Icons.fingerprint_rounded,
-                        label: 'Task ID',
-                        value: task.id,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.fingerprint_rounded,
+                                  size: 18,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Task ID',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                InkWell(
+                                  onTap: () {
+                                    Clipboard.setData(ClipboardData(text: task!.id));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Task ID copied to clipboard'),
+                                        duration: Duration(seconds: 1),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Copy',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            SelectableText(
+                              task.id,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.lightTextPrimary,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -318,7 +425,7 @@ class TaskDetailScreen extends StatelessWidget {
                     icon: Icon(
                       task.isCompleted
                           ? Icons.undo_rounded
-                          : Icons.done_all_rounded,
+                          : Icons.check_rounded,
                       size: 20,
                     ),
                     label: Text(
@@ -341,38 +448,48 @@ class TaskDetailScreen extends StatelessWidget {
   }
 
   Widget _buildMetadataRow({
+    required BuildContext context,
     required IconData icon,
     required String label,
-    required String value,
+    String? value,
     Widget? trailing,
   }) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Colors.grey),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const Spacer(),
-        if (trailing != null)
-          trailing
-        else
-          Flexible(
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final valueColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: labelColor),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: labelColor,
+              fontWeight: FontWeight.w500,
             ),
           ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: trailing ??
+                  Text(
+                    value ?? '',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: valueColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
