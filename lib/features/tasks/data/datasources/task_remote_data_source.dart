@@ -50,7 +50,9 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   @override
   Future<void> updateTask(TaskModel task) async {
     try {
-      await _collection.doc(task.id).update(task.toFirestore());
+      await _collection
+          .doc(task.id)
+          .set(task.toFirestore(), SetOptions(merge: true));
     } catch (e) {
       throw ServerException('Failed to update task in Firestore: $e');
     }

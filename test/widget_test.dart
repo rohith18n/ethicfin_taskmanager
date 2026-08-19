@@ -59,7 +59,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('TaskMaster'), findsOneWidget);
+    expect(find.textContaining('EthicFin'), findsOneWidget);
     expect(find.text('New Task'), findsOneWidget);
     expect(find.text('No Tasks Yet'), findsOneWidget);
   });

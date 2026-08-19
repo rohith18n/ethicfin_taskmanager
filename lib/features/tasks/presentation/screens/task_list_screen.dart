@@ -29,16 +29,12 @@ class TaskListScreen extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(30),
               ),
-              child: const Icon(
-                Icons.task_alt_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: const Icon(Icons.task_alt, color: Colors.white, size: 30),
             ),
             const SizedBox(width: 12),
-            const Text('TaskMaster'),
+            const Text('EthicFin\nTaskManager'),
           ],
         ),
         actions: [
@@ -48,7 +44,9 @@ class TaskListScreen extends StatelessWidget {
             builder: (context, themeMode) {
               final isDark = Theme.of(context).brightness == Brightness.dark;
               return IconButton(
-                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                tooltip: isDark
+                    ? 'Switch to Light Mode'
+                    : 'Switch to Dark Mode',
                 icon: Icon(
                   isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 ),
@@ -69,15 +67,17 @@ class TaskListScreen extends StatelessWidget {
           Expanded(
             child: BlocBuilder<TaskBloc, TaskState>(
               builder: (context, state) {
-                if (state.status == TaskStatus.loading && state.allTasks.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                if (state.status == TaskStatus.loading &&
+                    state.allTasks.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
                 }
 
-                if (state.status == TaskStatus.failure && state.allTasks.isEmpty) {
+                if (state.status == TaskStatus.failure &&
+                    state.allTasks.isEmpty) {
                   return ErrorViewWidget(
-                    message: state.errorMessage ?? 'An error occurred while loading tasks.',
+                    message:
+                        state.errorMessage ??
+                        'An error occurred while loading tasks.',
                     onRetry: () {
                       context.read<TaskBloc>().add(const LoadTasksEvent());
                     },

@@ -266,8 +266,24 @@ class FilterSortBar extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         ChoiceChip(
-                          label: const Text('All Priorities'),
+                          label: const Text(
+                            'All Priorities',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           selected: currentState.priorityFilter == null,
+                          selectedColor: const Color(0xFFCBD5E1),
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          checkmarkColor: Colors.black,
+                          side: BorderSide(
+                            color: currentState.priorityFilter == null
+                                ? Colors.black
+                                : const Color(0xFF94A3B8),
+                            width: currentState.priorityFilter == null ? 1.5 : 1,
+                          ),
                           onSelected: (selected) {
                             if (selected) {
                               bloc.add(const ChangePriorityFilterEvent(null));
@@ -276,11 +292,35 @@ class FilterSortBar extends StatelessWidget {
                           },
                         ),
                         ...TaskPriority.values.map((priority) {
-                          final isSelected = currentState.priorityFilter == priority;
+                          final isSelected =
+                              currentState.priorityFilter == priority;
                           return ChoiceChip(
-                            label: Text(priority.displayName),
+                            avatar: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: priority.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            label: Text(
+                              priority.displayName,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             selected: isSelected,
-                            selectedColor: priority.backgroundColor,
+                            selectedColor: const Color(0xFFCBD5E1),
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            checkmarkColor: Colors.black,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? Colors.black
+                                  : const Color(0xFF94A3B8),
+                              width: isSelected ? 1.5 : 1,
+                            ),
                             onSelected: (selected) {
                               bloc.add(ChangePriorityFilterEvent(
                                 selected ? priority : null,
