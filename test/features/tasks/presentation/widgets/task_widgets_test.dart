@@ -60,7 +60,7 @@ void main() {
     expect(find.text('Financial Risk Assessment'), findsOneWidget);
     expect(find.text('Complete Q3 risk breakdown'), findsOneWidget);
     expect(find.text('Urgent'), findsOneWidget);
-    expect(find.byType(Checkbox), findsOneWidget);
+    expect(find.byIcon(Icons.assignment_rounded), findsOneWidget);
   });
 
   testWidgets('TaskFormScreen shows validation error when title is empty', (tester) async {

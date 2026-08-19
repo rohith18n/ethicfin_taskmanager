@@ -18,37 +18,30 @@ class PriorityBadgeWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 8 : 12,
-        vertical: isCompact ? 3 : 6,
+        vertical: isCompact ? 3 : 5,
       ),
       decoration: BoxDecoration(
-        color: isDark
-            ? priority.color.withAlpha(50)
-            : priority.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: priority.color.withAlpha(isDark ? 100 : 80),
-          width: 1,
-        ),
+        color: isDark ? priority.backgroundColor : priority.backgroundColor.withAlpha(80),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: isCompact ? 6 : 8,
-            height: isCompact ? 6 : 8,
+            width: isCompact ? 6 : 7,
+            height: isCompact ? 6 : 7,
             decoration: BoxDecoration(
               color: priority.color,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             priority.displayName,
             style: TextStyle(
-              color: isDark ? Colors.white : priority.color,
-              fontSize: isCompact ? 11 : 13,
+              color: priority.color,
+              fontSize: isCompact ? 11 : 12,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
             ),
           ),
         ],

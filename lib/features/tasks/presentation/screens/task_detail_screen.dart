@@ -35,6 +35,7 @@ class TaskDetailScreen extends StatelessWidget {
 
         if (task == null) {
           return Scaffold(
+            backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
             appBar: AppBar(title: const Text('Task Details')),
             body: const Center(
               child: Text('Task not found.'),
@@ -45,8 +46,17 @@ class TaskDetailScreen extends StatelessWidget {
         final isOverdue = DateFormatter.isOverdue(task.dueDate, task.isCompleted);
 
         return Scaffold(
+          backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
           appBar: AppBar(
-            title: const Text('Task Details'),
+            backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+            title: Text(
+              'Task Details',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              ),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
@@ -73,29 +83,27 @@ class TaskDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: task.isCompleted
-                        ? AppColors.success.withAlpha(20)
+                        ? (isDark ? AppColors.chipSelectedBg : AppColors.lightChipSelectedBg)
                         : (isOverdue
-                            ? AppColors.error.withAlpha(20)
-                            : AppColors.primary.withAlpha(20)),
-                    borderRadius: BorderRadius.circular(12),
+                            ? (isDark ? AppColors.priorityUrgentBg : AppColors.priorityUrgentLightBg)
+                            : (isDark ? AppColors.darkInputFill : AppColors.lightInputFill)),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: task.isCompleted
-                          ? AppColors.success.withAlpha(60)
-                          : (isOverdue
-                              ? AppColors.error.withAlpha(60)
-                              : AppColors.primary.withAlpha(60)),
+                          ? (isDark ? Colors.transparent : AppColors.lightChipSelectedBorder)
+                          : (isOverdue ? AppColors.error.withAlpha(80) : Colors.transparent),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         task.isCompleted
-                            ? Icons.check_circle_rounded
+                            ? Icons.done_all_rounded
                             : (isOverdue
                                 ? Icons.warning_amber_rounded
-                                : Icons.pending_actions_rounded),
+                                : Icons.schedule_rounded),
                         color: task.isCompleted
-                            ? AppColors.success
+                            ? (isDark ? AppColors.chipSelectedText : AppColors.lightChipSelectedText)
                             : (isOverdue ? AppColors.error : AppColors.primary),
                         size: 24,
                       ),
@@ -109,10 +117,12 @@ class TaskDetailScreen extends StatelessWidget {
                                   : 'This task is pending completion'),
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: task.isCompleted
-                                ? AppColors.success
-                                : (isOverdue ? AppColors.error : AppColors.primary),
+                                ? (isDark ? AppColors.chipSelectedText : AppColors.lightChipSelectedText)
+                                : (isOverdue
+                                    ? AppColors.error
+                                    : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)),
                           ),
                         ),
                       ),
@@ -126,7 +136,7 @@ class TaskDetailScreen extends StatelessWidget {
                   task.title,
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     decoration: task.isCompleted
                         ? TextDecoration.lineThrough
                         : TextDecoration.none,
@@ -140,12 +150,12 @@ class TaskDetailScreen extends StatelessWidget {
                 // Priority Badge
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Priority: ',
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -155,12 +165,12 @@ class TaskDetailScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Description
-                const Text(
+                Text(
                   'Description',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -169,11 +179,8 @@ class TaskDetailScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
-                    ),
+                    color: isDark ? AppColors.darkInputFill : AppColors.lightInputFill,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     task.description.isNotEmpty
@@ -193,12 +200,12 @@ class TaskDetailScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Metadata Section
-                const Text(
+                Text(
                   'Task Metadata',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -206,11 +213,8 @@ class TaskDetailScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
-                    ),
+                    color: isDark ? AppColors.darkInputFill : AppColors.lightInputFill,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     children: [
@@ -222,27 +226,36 @@ class TaskDetailScreen extends StatelessWidget {
                           DateFormatter.formatRelative(task.dueDate),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: isOverdue ? AppColors.error : AppColors.primary,
                           ),
                         ),
                       ),
-                      const Divider(height: 20),
+                      Divider(
+                        height: 20,
+                        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                      ),
                       _buildMetadataRow(
                         icon: Icons.add_circle_outline_rounded,
                         label: 'Created Date',
                         value: DateFormatter.formatDateTime(task.createdAt),
                       ),
-                      const Divider(height: 20),
+                      Divider(
+                        height: 20,
+                        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                      ),
                       _buildMetadataRow(
                         icon: Icons.update_rounded,
                         label: 'Last Updated',
                         value: DateFormatter.formatDateTime(task.updatedAt),
                       ),
-                      const Divider(height: 20),
+                      Divider(
+                        height: 20,
+                        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                      ),
                       _buildMetadataRow(
                         icon: Icons.cloud_sync_rounded,
-                        label: 'Cloud Sync Status',
+                        label: 'Sync Status',
                         value: task.isSynced && task.syncAction == 'NONE'
                             ? 'Synced with Firestore'
                             : 'Pending offline sync',
@@ -256,7 +269,10 @@ class TaskDetailScreen extends StatelessWidget {
                               : AppColors.warning,
                         ),
                       ),
-                      const Divider(height: 20),
+                      Divider(
+                        height: 20,
+                        color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                      ),
                       _buildMetadataRow(
                         icon: Icons.fingerprint_rounded,
                         label: 'Task ID',
@@ -270,19 +286,19 @@ class TaskDetailScreen extends StatelessWidget {
                 // Toggle Completion Action Button
                 SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: task.isCompleted
-                          ? (isDark ? AppColors.darkSurface : AppColors.lightInputFill)
+                          ? (isDark ? AppColors.darkInputFill : AppColors.lightInputFill)
                           : AppColors.primary,
                       foregroundColor: task.isCompleted
-                          ? (isDark
-                              ? AppColors.darkTextPrimary
-                              : AppColors.lightTextPrimary)
+                          ? (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)
                           : Colors.white,
-                      side: task.isCompleted
-                          ? const BorderSide(color: AppColors.primary)
-                          : BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
                     ),
                     onPressed: () {
                       context
@@ -302,12 +318,17 @@ class TaskDetailScreen extends StatelessWidget {
                     icon: Icon(
                       task.isCompleted
                           ? Icons.undo_rounded
-                          : Icons.check_circle_rounded,
+                          : Icons.done_all_rounded,
+                      size: 20,
                     ),
                     label: Text(
                       task.isCompleted
                           ? 'Mark as Pending'
                           : 'Mark as Completed',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -334,7 +355,7 @@ class TaskDetailScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             color: Colors.grey,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const Spacer(),
@@ -356,9 +377,12 @@ class TaskDetailScreen extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context, TaskEntity task) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         title: const Text('Delete Task'),
         content: Text('Are you sure you want to delete "${task.title}"?'),
         actions: [

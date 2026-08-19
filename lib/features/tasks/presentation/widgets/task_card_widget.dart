@@ -26,12 +26,8 @@ class TaskCardWidget extends StatelessWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        padding: const EdgeInsets.only(right: 24),
+        color: AppColors.error,
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -52,6 +48,7 @@ class TaskCardWidget extends StatelessWidget {
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
             title: const Text('Delete Task'),
             content: Text('Are you sure you want to delete "${task.title}"?'),
             actions: [
@@ -70,146 +67,184 @@ class TaskCardWidget extends StatelessWidget {
       },
       onDismissed: (direction) {
         context.read<TaskBloc>().add(DeleteTaskEvent(task.id));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Task "${task.title}" deleted'),
-            action: SnackBarAction(
-              label: 'OK',
-              onPressed: () {},
-            ),
-          ),
-        );
       },
-      child: Card(
-        elevation: 0,
-        child: InkWell(
-          onTap: () {
-            context.push('/task/${task.id}', extra: task);
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Row: Checkbox, Title, and Sync icon
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Completion Toggle
-                    Transform.scale(
-                      scale: 1.1,
-                      child: Checkbox(
-                        value: task.isCompleted,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        activeColor: AppColors.primary,
-                        onChanged: (_) {
-                          context
-                              .read<TaskBloc>()
-                              .add(ToggleTaskCompletionEvent(task.id));
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Title and Description
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            task.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                              color: task.isCompleted
-                                  ? (isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary)
-                                  : (isDark
-                                      ? AppColors.darkTextPrimary
-                                      : AppColors.lightTextPrimary),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              context.push('/task/${task.id}', extra: task);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Circular Avatar / Priority Indicator
+                  GestureDetector(
+                    onTap: () {
+                      context
+                          .read<TaskBloc>()
+                          .add(ToggleTaskCompletionEvent(task.id));
+                    },
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isDark ? AppColors.darkInputFill : AppColors.lightInputFill,
+                            border: Border.all(
+                              color: task.priority.color,
+                              width: 2,
                             ),
                           ),
-                          if (task.description.isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                          child: Center(
+                            child: Icon(
+                              task.isCompleted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.assignment_rounded,
+                              size: 24,
+                              color: task.isCompleted
+                                  ? AppColors.primary
+                                  : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                            ),
+                          ),
+                        ),
+                        if (task.isCompleted)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.done_all_rounded,
+                                size: 14,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Middle Column: Title & Description Subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Row 1: Title and Time
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                task.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary,
+                                  decoration: task.isCompleted
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Text(
-                              task.description,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              DateFormatter.formatRelative(task.dueDate),
                               style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
+                                fontSize: 12,
+                                fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w500,
+                                color: isOverdue
+                                    ? AppColors.error
+                                    : (isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary),
                               ),
                             ),
                           ],
-                        ],
-                      ),
-                    ),
-                    // Sync Status Mini Icon
-                    if (!task.isSynced || task.syncAction != 'NONE')
-                      const Padding(
-                        padding: EdgeInsets.only(left: 6),
-                        child: Tooltip(
-                          message: 'Pending sync with cloud',
-                          child: Icon(
-                            Icons.cloud_upload_outlined,
-                            size: 16,
-                            color: AppColors.warning,
-                          ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 10),
-                // Bottom Row: Priority Badge + Due Date
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    PriorityBadgeWidget(
-                      priority: task.priority,
-                      isCompact: true,
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.event_outlined,
-                          size: 14,
-                          color: isOverdue
-                              ? AppColors.error
-                              : (isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          DateFormatter.formatRelative(task.dueDate),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w500,
-                            color: isOverdue
-                                ? AppColors.error
-                                : (isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary),
-                          ),
+                        const SizedBox(height: 4),
+
+                        // Row 2: Subtitle with checkmarks/priority tag and sync icon
+                        Row(
+                          children: [
+                            if (task.isCompleted)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 6),
+                                child: Icon(
+                                  Icons.done_all_rounded,
+                                  size: 16,
+                                  color: AppColors.accent, // WhatsApp blue double checks
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Icon(
+                                  Icons.description_outlined,
+                                  size: 15,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
+                              ),
+                            Expanded(
+                              child: Text(
+                                task.description.isNotEmpty
+                                    ? task.description
+                                    : 'No additional details',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            PriorityBadgeWidget(
+                              priority: task.priority,
+                              isCompact: true,
+                            ),
+                            if (!task.isSynced || task.syncAction != 'NONE') ...[
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.cloud_upload_outlined,
+                                size: 14,
+                                color: AppColors.warning,
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(left: 80, right: 16),
+            child: Divider(
+              height: 1,
+              color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+            ),
+          ),
+        ],
       ),
     );
   }

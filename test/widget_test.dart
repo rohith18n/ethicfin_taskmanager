@@ -59,8 +59,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('EthicFin'), findsOneWidget);
-    expect(find.text('New Task'), findsOneWidget);
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.text('No Tasks Yet'), findsOneWidget);
   });
 }

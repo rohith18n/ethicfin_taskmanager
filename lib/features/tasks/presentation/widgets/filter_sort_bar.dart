@@ -20,14 +20,15 @@ class FilterSortBar extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Filter Chips row + Sort Button
+              // Horizontal Filter Chips Row (WhatsApp Style)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip(
+                    _buildPillChip(
                       context,
-                      label: 'All (${state.totalTasksCount})',
+                      label: 'All',
+                      count: state.totalTasksCount,
                       isSelected: state.filter == TaskFilter.all,
                       onTap: () {
                         context
@@ -36,9 +37,10 @@ class FilterSortBar extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(
+                    _buildPillChip(
                       context,
-                      label: 'Pending (${state.pendingTasksCount})',
+                      label: 'Pending',
+                      count: state.pendingTasksCount,
                       isSelected: state.filter == TaskFilter.pending,
                       onTap: () {
                         context
@@ -47,9 +49,10 @@ class FilterSortBar extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(
+                    _buildPillChip(
                       context,
-                      label: 'Completed (${state.completedTasksCount})',
+                      label: 'Completed',
+                      count: state.completedTasksCount,
                       isSelected: state.filter == TaskFilter.completed,
                       onTap: () {
                         context
@@ -58,38 +61,66 @@ class FilterSortBar extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 8),
-                    // Sort & Priority Filter Button
-                    _buildSortButton(context, state),
+                    _buildSortPill(context, state),
                   ],
                 ),
               ),
-              // Priority Filter row if active
+              // Active Priority Filter Tag
               if (state.priorityFilter != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      'Priority: ${state.priorityFilter!.displayName}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.chipSelectedBg
+                        : AppColors.lightChipSelectedBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.transparent
+                          : AppColors.lightChipSelectedBorder,
+                      width: 1,
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        context
-                            .read<TaskBloc>()
-                            .add(const ChangePriorityFilterEvent(null));
-                      },
-                      child: const Icon(
-                        Icons.close_rounded,
-                        size: 14,
-                        color: AppColors.primary,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: state.priorityFilter!.color,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'Priority: ${state.priorityFilter!.displayName}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.chipSelectedText
+                              : AppColors.lightChipSelectedText,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<TaskBloc>()
+                              .add(const ChangePriorityFilterEvent(null));
+                        },
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 14,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.chipSelectedText
+                              : AppColors.lightChipSelectedText,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -99,79 +130,91 @@ class FilterSortBar extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterChip(
+  Widget _buildPillChip(
     BuildContext context, {
     required String label,
+    required int count,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final bgColor = isSelected
+        ? (isDark ? AppColors.chipSelectedBg : AppColors.lightChipSelectedBg)
+        : (isDark ? AppColors.chipUnselectedBg : AppColors.lightChipUnselectedBg);
+
+    final textColor = isSelected
+        ? (isDark ? AppColors.chipSelectedText : AppColors.lightChipSelectedText)
+        : (isDark ? AppColors.chipUnselectedText : AppColors.lightChipUnselectedText);
+
+    final borderColor = isSelected
+        ? (isDark ? Colors.transparent : AppColors.lightChipSelectedBorder)
+        : (isDark ? Colors.transparent : AppColors.lightChipUnselectedBorder);
+
+    final displayText = count > 0 && isSelected ? '$label $count' : label;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : (isDark ? AppColors.darkSurface : AppColors.lightInputFill),
-          borderRadius: BorderRadius.circular(20),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : (isDark ? AppColors.darkDivider : AppColors.lightDivider),
+            color: borderColor,
             width: 1,
           ),
         ),
         child: Text(
-          label,
+          displayText,
           style: TextStyle(
-            color: isSelected
-                ? Colors.white
-                : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: textColor,
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            letterSpacing: 0.1,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSortButton(BuildContext context, TaskState state) {
+  Widget _buildSortPill(BuildContext context, TaskState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? AppColors.chipUnselectedBg : AppColors.lightChipUnselectedBg;
+    final textColor = isDark ? AppColors.chipUnselectedText : AppColors.lightChipUnselectedText;
+    final borderColor = isDark ? Colors.transparent : AppColors.lightChipUnselectedBorder;
 
     return InkWell(
       onTap: () => _showFilterSortSheet(context, state),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.lightInputFill,
-          borderRadius: BorderRadius.circular(20),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+            color: borderColor,
             width: 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.tune_rounded,
               size: 16,
-              color: AppColors.primary,
+              color: textColor,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(
-              'Sort & More',
+              'Sort',
               style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -181,8 +224,11 @@ class FilterSortBar extends StatelessWidget {
   }
 
   void _showFilterSortSheet(BuildContext context, TaskState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -206,26 +252,27 @@ class FilterSortBar extends StatelessWidget {
                         height: 4,
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade400,
+                          color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
-                    const Text(
-                      'Sort & Filter Tasks',
+                    Text(
+                      'Sort & Filter',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'SORT BY',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
-                        color: Colors.grey,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -237,12 +284,17 @@ class FilterSortBar extends StatelessWidget {
                         title: Text(
                           sort.label,
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                            color: isSelected ? AppColors.primary : null,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? (isDark ? AppColors.chipSelectedText : AppColors.primaryDark)
+                                : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
                           ),
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                            ? Icon(
+                                Icons.check_circle_rounded,
+                                color: isDark ? AppColors.chipSelectedText : AppColors.primaryDark,
+                              )
                             : null,
                         onTap: () {
                           bloc.add(ChangeSortEvent(sort));
@@ -250,14 +302,17 @@ class FilterSortBar extends StatelessWidget {
                         },
                       );
                     }),
-                    const Divider(height: 24),
-                    const Text(
+                    Divider(
+                      height: 24,
+                      color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+                    ),
+                    Text(
                       'FILTER BY PRIORITY',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
-                        color: Colors.grey,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -265,65 +320,25 @@ class FilterSortBar extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        ChoiceChip(
-                          label: const Text(
-                            'All Priorities',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          selected: currentState.priorityFilter == null,
-                          selectedColor: const Color(0xFFCBD5E1),
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          checkmarkColor: Colors.black,
-                          side: BorderSide(
-                            color: currentState.priorityFilter == null
-                                ? Colors.black
-                                : const Color(0xFF94A3B8),
-                            width: currentState.priorityFilter == null ? 1.5 : 1,
-                          ),
-                          onSelected: (selected) {
-                            if (selected) {
-                              bloc.add(const ChangePriorityFilterEvent(null));
-                              Navigator.pop(bottomSheetContext);
-                            }
+                        _buildPriorityModalChip(
+                          label: 'All Priorities',
+                          isSelected: currentState.priorityFilter == null,
+                          isDark: isDark,
+                          onTap: () {
+                            bloc.add(const ChangePriorityFilterEvent(null));
+                            Navigator.pop(bottomSheetContext);
                           },
                         ),
                         ...TaskPriority.values.map((priority) {
-                          final isSelected =
-                              currentState.priorityFilter == priority;
-                          return ChoiceChip(
-                            avatar: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: priority.color,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            label: Text(
-                              priority.displayName,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: const Color(0xFFCBD5E1),
-                            backgroundColor: const Color(0xFFF1F5F9),
-                            checkmarkColor: Colors.black,
-                            side: BorderSide(
-                              color: isSelected
-                                  ? Colors.black
-                                  : const Color(0xFF94A3B8),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                            onSelected: (selected) {
+                          final isSelected = currentState.priorityFilter == priority;
+                          return _buildPriorityModalChip(
+                            label: priority.displayName,
+                            dotColor: priority.color,
+                            isSelected: isSelected,
+                            isDark: isDark,
+                            onTap: () {
                               bloc.add(ChangePriorityFilterEvent(
-                                selected ? priority : null,
+                                isSelected ? null : priority,
                               ));
                               Navigator.pop(bottomSheetContext);
                             },
@@ -339,6 +354,66 @@ class FilterSortBar extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildPriorityModalChip({
+    required String label,
+    Color? dotColor,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    final bgColor = isSelected
+        ? (isDark ? AppColors.chipSelectedBg : AppColors.lightChipSelectedBg)
+        : (isDark ? AppColors.chipUnselectedBg : AppColors.lightChipUnselectedBg);
+
+    final textColor = isSelected
+        ? (isDark ? AppColors.chipSelectedText : AppColors.lightChipSelectedText)
+        : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary);
+
+    final borderColor = isSelected
+        ? (isDark ? Colors.transparent : AppColors.lightChipSelectedBorder)
+        : (isDark ? Colors.transparent : AppColors.lightChipUnselectedBorder);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (dotColor != null) ...[
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

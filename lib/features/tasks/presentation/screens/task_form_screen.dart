@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/task_entity.dart';
 import '../../domain/enums/task_priority.dart';
@@ -133,8 +134,34 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Task' : 'Create Task'),
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        title: Text(
+          widget.isEditing ? 'Edit Task' : 'New Task',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+          ),
+        ),
+        actions: [
+          BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) {
+              return IconButton(
+                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                icon: Icon(
+                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                ),
+                onPressed: () {
+                  context.read<ThemeCubit>().toggleTheme();
+                },
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -145,17 +172,22 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title Field
-                const Text(
+                Text(
                   'Task Title *',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleController,
                   textInputAction: TextInputAction.next,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    fontSize: 15,
+                  ),
                   decoration: const InputDecoration(
                     hintText: 'e.g., Complete financial compliance report',
                   ),
@@ -172,11 +204,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 const SizedBox(height: 20),
 
                 // Description Field
-                const Text(
+                Text(
                   'Description',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -184,24 +217,68 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   controller: _descriptionController,
                   maxLines: 4,
                   textInputAction: TextInputAction.newline,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    fontSize: 15,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Add details, requirements, or links...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
 
                 // Priority Selection
-                const Text(
+                Text(
                   'Priority Level',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: TaskPriority.values.map((priority) {
                     final isSelected = _selectedPriority == priority;
+
+                    Color pillBg;
+                    Color pillText;
+                    Color pillBorder;
+
+                    if (isSelected) {
+                      if (isDark) {
+                        pillBg = priority.backgroundColor;
+                        pillText = priority.color;
+                        pillBorder = priority.color;
+                      } else {
+                        pillBg = AppColors.lightChipSelectedBg;
+                        pillText = AppColors.lightChipSelectedText;
+                        pillBorder = AppColors.lightChipSelectedBorder;
+                      }
+                    } else {
+                      if (isDark) {
+                        pillBg = AppColors.darkInputFill;
+                        pillText = AppColors.darkTextSecondary;
+                        pillBorder = Colors.transparent;
+                      } else {
+                        pillBg = Colors.white;
+                        pillText = AppColors.lightChipUnselectedText;
+                        pillBorder = AppColors.lightChipUnselectedBorder;
+                      }
+                    }
+
                     return Expanded(
                       child: GestureDetector(
                         onTap: () {
@@ -210,22 +287,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           });
                         },
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 150),
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? priority.color
-                                : (isDark
-                                    ? AppColors.darkSurface
-                                    : AppColors.lightInputFill),
-                            borderRadius: BorderRadius.circular(10),
+                            color: pillBg,
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected
-                                  ? priority.color
-                                  : (isDark
-                                      ? AppColors.darkDivider
-                                      : AppColors.lightDivider),
+                              color: pillBorder,
                               width: isSelected ? 1.5 : 1,
                             ),
                           ),
@@ -235,9 +304,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : priority.color,
+                                  color: priority.color,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -246,12 +313,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                                 priority.displayName,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isDark
-                                          ? AppColors.darkTextPrimary
-                                          : AppColors.lightTextPrimary),
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                  color: pillText,
                                 ),
                               ),
                             ],
@@ -264,33 +327,34 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 const SizedBox(height: 24),
 
                 // Due Date & Time Picker
-                const Text(
+                Text(
                   'Due Date & Time',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _pickDueDate,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(28),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 18,
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.darkInputFill
                           : AppColors.lightInputFill,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(28),
                     ),
                     child: Row(
                       children: [
                         const Icon(
                           Icons.calendar_today_rounded,
-                          size: 20,
+                          size: 18,
                           color: AppColors.primary,
                         ),
                         const SizedBox(width: 12),
@@ -309,7 +373,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           'Change',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.primary,
                           ),
                         ),
@@ -325,6 +389,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                     children: [
                       Checkbox(
                         value: _isCompleted,
+                        activeColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -334,11 +399,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           });
                         },
                       ),
-                      const Text(
+                      Text(
                         'Mark as completed',
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
                         ),
                       ),
                     ],
@@ -349,8 +417,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 // Action Buttons
                 SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: _isSaving ? null : _saveTask,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
                     child: _isSaving
                         ? const SizedBox(
                             width: 20,
@@ -361,7 +436,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(widget.isEditing ? 'Save Changes' : 'Create Task'),
+                        : Text(
+                            widget.isEditing ? 'Save Changes' : 'Create Task',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ],
