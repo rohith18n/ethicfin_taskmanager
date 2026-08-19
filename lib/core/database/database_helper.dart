@@ -25,6 +25,7 @@ class DatabaseHelper {
       path,
       version: AppConstants.databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -40,17 +41,32 @@ class DatabaseHelper {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 1,
-        sync_action TEXT NOT NULL DEFAULT 'NONE'
+        sync_action TEXT NOT NULL DEFAULT 'NONE',
+        user_id TEXT
       )
     ''');
 
-    // Create index on is_synced and due_date for fast querying
+    // Create index on is_synced, due_date, and user_id for fast querying
     await db.execute('''
       CREATE INDEX idx_tasks_is_synced ON ${AppConstants.tasksTableName} (is_synced)
     ''');
     await db.execute('''
       CREATE INDEX idx_tasks_due_date ON ${AppConstants.tasksTableName} (due_date)
     ''');
+    await db.execute('''
+      CREATE INDEX idx_tasks_user_id ON ${AppConstants.tasksTableName} (user_id)
+    ''');
+  }
+
+  FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE ${AppConstants.tasksTableName} ADD COLUMN user_id TEXT',
+      );
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON ${AppConstants.tasksTableName} (user_id)
+      ''');
+    }
   }
 
   Future<void> close() async {

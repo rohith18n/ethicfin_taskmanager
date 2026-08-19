@@ -12,7 +12,11 @@ abstract class TaskEvent extends Equatable {
 }
 
 class LoadTasksEvent extends TaskEvent {
-  const LoadTasksEvent();
+  final String? userId;
+  const LoadTasksEvent([this.userId]);
+
+  @override
+  List<Object?> get props => [userId];
 }
 
 class CreateTaskEvent extends TaskEvent {
@@ -88,7 +92,11 @@ class ChangeSortEvent extends TaskEvent {
 }
 
 class SyncTasksEvent extends TaskEvent {
-  const SyncTasksEvent();
+  final String? userId;
+  const SyncTasksEvent([this.userId]);
+
+  @override
+  List<Object?> get props => [userId];
 }
 
 class NetworkStatusChangedEvent extends TaskEvent {

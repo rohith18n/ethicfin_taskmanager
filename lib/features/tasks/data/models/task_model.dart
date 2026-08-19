@@ -13,6 +13,7 @@ class TaskModel extends TaskEntity {
     required super.updatedAt,
     super.isSynced = true,
     super.syncAction = 'NONE',
+    super.userId,
   });
 
   factory TaskModel.fromEntity(TaskEntity entity) {
@@ -27,6 +28,7 @@ class TaskModel extends TaskEntity {
       updatedAt: entity.updatedAt,
       isSynced: entity.isSynced,
       syncAction: entity.syncAction,
+      userId: entity.userId,
     );
   }
 
@@ -42,6 +44,7 @@ class TaskModel extends TaskEntity {
       updatedAt: DateTime.parse(json['updated_at'] as String? ?? json['updatedAt'] as String),
       isSynced: json['is_synced'] == 1 || json['isSynced'] == true,
       syncAction: json['sync_action'] as String? ?? json['syncAction'] as String? ?? 'NONE',
+      userId: json['user_id'] as String? ?? json['userId'] as String?,
     );
   }
 
@@ -57,6 +60,7 @@ class TaskModel extends TaskEntity {
       'updatedAt': updatedAt.toIso8601String(),
       'isSynced': isSynced,
       'syncAction': syncAction,
+      'userId': userId,
     };
   }
 
@@ -72,6 +76,7 @@ class TaskModel extends TaskEntity {
       updatedAt: DateTime.parse(map['updated_at'] as String),
       isSynced: (map['is_synced'] as int) == 1,
       syncAction: map['sync_action'] as String? ?? 'NONE',
+      userId: map['user_id'] as String?,
     );
   }
 
@@ -87,6 +92,7 @@ class TaskModel extends TaskEntity {
       'updated_at': updatedAt.toIso8601String(),
       'is_synced': isSynced ? 1 : 0,
       'sync_action': syncAction,
+      'user_id': userId,
     };
   }
 
@@ -102,6 +108,7 @@ class TaskModel extends TaskEntity {
       updatedAt: DateTime.parse(map['updatedAt'] as String),
       isSynced: true,
       syncAction: 'NONE',
+      userId: map['userId'] as String?,
     );
   }
 
@@ -114,6 +121,7 @@ class TaskModel extends TaskEntity {
       'isCompleted': isCompleted,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'userId': userId,
     };
   }
 
@@ -129,6 +137,7 @@ class TaskModel extends TaskEntity {
     DateTime? updatedAt,
     bool? isSynced,
     String? syncAction,
+    String? userId,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -141,6 +150,7 @@ class TaskModel extends TaskEntity {
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
       syncAction: syncAction ?? this.syncAction,
+      userId: userId ?? this.userId,
     );
   }
 }

@@ -1,4 +1,9 @@
+import 'package:ethicfin_taskmanager/core/di/injection_container.dart';
+import 'package:ethicfin_taskmanager/core/services/notification_service.dart';
 import 'package:ethicfin_taskmanager/core/theme/theme_cubit.dart';
+import 'package:ethicfin_taskmanager/features/auth/domain/entities/user_entity.dart';
+import 'package:ethicfin_taskmanager/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ethicfin_taskmanager/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/entities/task_entity.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/enums/task_priority.dart';
 import 'package:ethicfin_taskmanager/features/tasks/presentation/bloc/task_bloc.dart';
@@ -12,14 +17,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockTaskBloc extends Mock implements TaskBloc {}
+class MockAuthBloc extends Mock implements AuthBloc {}
+class MockNotificationService extends Mock implements NotificationService {}
 
 void main() {
   late MockTaskBloc mockTaskBloc;
+  late MockAuthBloc mockAuthBloc;
+  late MockNotificationService mockNotificationService;
+
+  setUpAll(() {
+    mockNotificationService = MockNotificationService();
+    if (!sl.isRegistered<NotificationService>()) {
+      sl.registerLazySingleton<NotificationService>(() => mockNotificationService);
+    }
+  });
 
   setUp(() {
     mockTaskBloc = MockTaskBloc();
+    mockAuthBloc = MockAuthBloc();
+
     when(() => mockTaskBloc.state).thenReturn(const TaskState());
     when(() => mockTaskBloc.stream).thenAnswer((_) => const Stream.empty());
+
+    when(() => mockAuthBloc.state).thenReturn(const AuthState(
+      status: AuthStatus.authenticated,
+      user: UserEntity(id: 'test-user-1', email: 'test@example.com', displayName: 'Test User'),
+    ));
+    when(() => mockAuthBloc.stream).thenAnswer((_) => const Stream.empty());
   });
 
   final testTask = TaskEntity(
@@ -70,6 +94,7 @@ void main() {
         home: MultiBlocProvider(
           providers: [
             BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+            BlocProvider<AuthBloc>.value(value: mockAuthBloc),
             BlocProvider<TaskBloc>.value(value: mockTaskBloc),
           ],
           child: const TaskFormScreen(),
@@ -94,6 +119,7 @@ void main() {
         home: MultiBlocProvider(
           providers: [
             BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+            BlocProvider<AuthBloc>.value(value: mockAuthBloc),
             BlocProvider<TaskBloc>.value(value: mockTaskBloc),
           ],
           child: const TaskFormScreen(),

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../domain/entities/task_entity.dart';
 import '../../domain/enums/task_priority.dart';
 import '../bloc/task_bloc.dart';
@@ -115,6 +118,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     final now = DateTime.now();
 
+    final currentUserId = context.read<AuthBloc>().state.user?.id;
+
     if (widget.isEditing) {
       final updatedTask = widget.task!.copyWith(
         title: _titleController.text.trim(),
@@ -125,6 +130,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         updatedAt: now,
       );
       context.read<TaskBloc>().add(UpdateTaskEvent(updatedTask));
+      sl<NotificationService>().scheduleTaskDueReminder(updatedTask);
     } else {
       final newTask = TaskEntity(
         id: const Uuid().v4(),
@@ -135,8 +141,10 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         isCompleted: false,
         createdAt: now,
         updatedAt: now,
+        userId: currentUserId,
       );
       context.read<TaskBloc>().add(CreateTaskEvent(newTask));
+      sl<NotificationService>().scheduleTaskDueReminder(newTask);
     }
 
     ScaffoldMessenger.of(context).showSnackBar(

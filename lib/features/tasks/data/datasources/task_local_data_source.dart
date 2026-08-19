@@ -5,13 +5,13 @@ import '../../../../core/error/exceptions.dart';
 import '../models/task_model.dart';
 
 abstract class TaskLocalDataSource {
-  Future<List<TaskModel>> getTasks();
+  Future<List<TaskModel>> getTasks({String? userId});
   Future<TaskModel?> getTaskById(String id);
   Future<void> insertTask(TaskModel task);
   Future<void> updateTask(TaskModel task);
   Future<void> deleteTask(String id);
   Future<void> hardDeleteTask(String id);
-  Future<List<TaskModel>> getPendingSyncTasks();
+  Future<List<TaskModel>> getPendingSyncTasks({String? userId});
   Future<void> markAsSynced(String id);
   Future<void> saveFromRemote(List<TaskModel> remoteTasks);
 }
@@ -22,15 +22,28 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
   TaskLocalDataSourceImpl({required this.databaseHelper});
 
   @override
-  Future<List<TaskModel>> getTasks() async {
+  Future<List<TaskModel>> getTasks({String? userId}) async {
     try {
       final db = await databaseHelper.database;
-      final results = await db.query(
-        AppConstants.tasksTableName,
-        where: 'sync_action != ?',
-        whereArgs: [AppConstants.syncActionDelete],
-        orderBy: 'created_at DESC',
-      );
+      List<Map<String, dynamic>> results;
+
+      if (userId != null && userId.isNotEmpty && userId != 'guest_user') {
+        // Logged-in email/password user: strictly fetch this user's tasks
+        results = await db.query(
+          AppConstants.tasksTableName,
+          where: 'sync_action != ? AND user_id = ?',
+          whereArgs: [AppConstants.syncActionDelete, userId],
+          orderBy: 'created_at DESC',
+        );
+      } else {
+        // Guest user mode: show only guest / unassigned local tasks
+        results = await db.query(
+          AppConstants.tasksTableName,
+          where: 'sync_action != ? AND (user_id = ? OR user_id IS NULL OR user_id = "")',
+          whereArgs: [AppConstants.syncActionDelete, 'guest_user'],
+          orderBy: 'created_at DESC',
+        );
+      }
       return results.map((map) => TaskModel.fromSqflite(map)).toList();
     } catch (e) {
       throw CacheException('Failed to fetch tasks from local database: $e');
@@ -129,14 +142,24 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
   }
 
   @override
-  Future<List<TaskModel>> getPendingSyncTasks() async {
+  Future<List<TaskModel>> getPendingSyncTasks({String? userId}) async {
     try {
       final db = await databaseHelper.database;
-      final results = await db.query(
-        AppConstants.tasksTableName,
-        where: 'is_synced = ?',
-        whereArgs: [0],
-      );
+      List<Map<String, dynamic>> results;
+
+      if (userId != null && userId.isNotEmpty && userId != 'guest_user') {
+        results = await db.query(
+          AppConstants.tasksTableName,
+          where: 'is_synced = ? AND user_id = ?',
+          whereArgs: [0, userId],
+        );
+      } else {
+        results = await db.query(
+          AppConstants.tasksTableName,
+          where: 'is_synced = ? AND (user_id = ? OR user_id IS NULL OR user_id = "")',
+          whereArgs: [0, 'guest_user'],
+        );
+      }
       return results.map((map) => TaskModel.fromSqflite(map)).toList();
     } catch (e) {
       throw CacheException('Failed to fetch pending sync tasks: $e');
@@ -167,7 +190,6 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
       final db = await databaseHelper.database;
       await db.transaction((txn) async {
         for (final remoteTask in remoteTasks) {
-          // Check if local has pending unsynced changes for this task
           final local = await txn.query(
             AppConstants.tasksTableName,
             where: 'id = ?',
@@ -176,8 +198,10 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
 
           if (local.isNotEmpty) {
             final isSynced = (local.first['is_synced'] as int) == 1;
-            // If local has pending unsynced edits, don't overwrite with older remote data
-            if (!isSynced) {
+            final localUpdatedAt = DateTime.parse(local.first['updated_at'] as String);
+
+            // If local has un-synced edits and local is newer, preserve local
+            if (!isSynced && localUpdatedAt.isAfter(remoteTask.updatedAt)) {
               continue;
             }
           }

@@ -5,7 +5,7 @@ class SyncTasksUseCase {
 
   SyncTasksUseCase(this.repository);
 
-  Future<void> call() async {
-    return await repository.syncPendingTasks();
+  Future<void> call({String? userId}) async {
+    return await repository.syncPendingTasks(userId: userId);
   }
 }

@@ -24,6 +24,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final NetworkInfo networkInfo;
 
   StreamSubscription<bool>? _connectivitySubscription;
+  String? _currentUserId;
 
   TaskBloc({
     required this.getTasksUseCase,
@@ -74,9 +75,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   }
 
   Future<void> _onLoadTasks(LoadTasksEvent event, Emitter<TaskState> emit) async {
+    _currentUserId = event.userId;
     emit(state.copyWith(status: TaskStatus.loading, errorMessage: null));
     try {
-      final tasks = await getTasksUseCase();
+      final tasks = await getTasksUseCase(userId: _currentUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -100,7 +102,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onCreateTask(CreateTaskEvent event, Emitter<TaskState> emit) async {
     try {
       await createTaskUseCase(event.task);
-      final tasks = await getTasksUseCase();
+      final tasks = await getTasksUseCase(userId: _currentUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -124,7 +126,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onUpdateTask(UpdateTaskEvent event, Emitter<TaskState> emit) async {
     try {
       await updateTaskUseCase(event.task);
-      final tasks = await getTasksUseCase();
+      final tasks = await getTasksUseCase(userId: _currentUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -148,7 +150,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onDeleteTask(DeleteTaskEvent event, Emitter<TaskState> emit) async {
     try {
       await deleteTaskUseCase(event.id);
-      final tasks = await getTasksUseCase();
+      final tasks = await getTasksUseCase(userId: _currentUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -175,7 +177,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   ) async {
     try {
       await toggleTaskCompletionUseCase(event.id);
-      final tasks = await getTasksUseCase();
+      final tasks = await getTasksUseCase(userId: _currentUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -254,11 +256,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _onSyncTasks(SyncTasksEvent event, Emitter<TaskState> emit) async {
     if (state.isSyncing) return;
+    final effectiveUserId = event.userId ?? _currentUserId;
     emit(state.copyWith(isSyncing: true));
 
     try {
-      await syncTasksUseCase();
-      final tasks = await getTasksUseCase();
+      await syncTasksUseCase(userId: effectiveUserId);
+      final tasks = await getTasksUseCase(userId: effectiveUserId);
       final filtered = _filterAndSort(
         tasks: tasks,
         query: state.searchQuery,
@@ -289,7 +292,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
     // If connectivity was restored, automatically trigger sync!
     if (wasOffline && event.isConnected) {
-      add(const SyncTasksEvent());
+      add(SyncTasksEvent(_currentUserId));
     }
   }
 
@@ -313,13 +316,13 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
     // 2. Status Filter
     switch (filter) {
-      case TaskFilter.all:
-        break;
       case TaskFilter.pending:
         result = result.where((task) => !task.isCompleted).toList();
         break;
       case TaskFilter.completed:
         result = result.where((task) => task.isCompleted).toList();
+        break;
+      case TaskFilter.all:
         break;
     }
 
@@ -328,21 +331,24 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       result = result.where((task) => task.priority == priority).toList();
     }
 
-    // 4. Sorting
-    result.sort((a, b) {
-      switch (sortBy) {
-        case TaskSortBy.dueDateAsc:
-          return a.dueDate.compareTo(b.dueDate);
-        case TaskSortBy.dueDateDesc:
-          return b.dueDate.compareTo(a.dueDate);
-        case TaskSortBy.priorityHighToLow:
-          return b.priority.rank.compareTo(a.priority.rank);
-        case TaskSortBy.priorityLowToHigh:
-          return a.priority.rank.compareTo(b.priority.rank);
-        case TaskSortBy.createdDateDesc:
-          return b.createdAt.compareTo(a.createdAt);
-      }
-    });
+    // 4. Sort
+    switch (sortBy) {
+      case TaskSortBy.dueDateAsc:
+        result.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        break;
+      case TaskSortBy.dueDateDesc:
+        result.sort((a, b) => b.dueDate.compareTo(a.dueDate));
+        break;
+      case TaskSortBy.priorityHighToLow:
+        result.sort((a, b) => b.priority.index.compareTo(a.priority.index));
+        break;
+      case TaskSortBy.priorityLowToHigh:
+        result.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+        break;
+      case TaskSortBy.createdDateDesc:
+        result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+    }
 
     return result;
   }

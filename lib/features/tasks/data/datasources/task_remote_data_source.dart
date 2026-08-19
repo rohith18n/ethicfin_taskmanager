@@ -4,10 +4,14 @@ import '../../../../core/error/exceptions.dart';
 import '../models/task_model.dart';
 
 abstract class TaskRemoteDataSource {
-  Future<List<TaskModel>> getTasks();
+  Future<List<TaskModel>> getTasks({String? userId, DateTime? modifiedSince});
   Future<void> createTask(TaskModel task);
   Future<void> updateTask(TaskModel task);
   Future<void> deleteTask(String id);
+  Future<void> syncBatch({
+    required List<TaskModel> toInsertOrUpdate,
+    required List<String> toDelete,
+  });
 }
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
@@ -27,9 +31,19 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       _firestore.collection(AppConstants.firestoreTasksCollection);
 
   @override
-  Future<List<TaskModel>> getTasks() async {
+  Future<List<TaskModel>> getTasks({String? userId, DateTime? modifiedSince}) async {
     try {
-      final snapshot = await _collection.get();
+      Query<Map<String, dynamic>> query = _collection;
+
+      if (userId != null && userId.isNotEmpty) {
+        query = query.where('userId', isEqualTo: userId);
+      }
+
+      if (modifiedSince != null) {
+        query = query.where('updatedAt', isGreaterThan: modifiedSince.toIso8601String());
+      }
+
+      final snapshot = await query.get();
       return snapshot.docs.map((doc) {
         return TaskModel.fromFirestore(doc.data(), doc.id);
       }).toList();
@@ -64,6 +78,30 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       await _collection.doc(id).delete();
     } catch (e) {
       throw ServerException('Failed to delete task from Firestore: $e');
+    }
+  }
+
+  @override
+  Future<void> syncBatch({
+    required List<TaskModel> toInsertOrUpdate,
+    required List<String> toDelete,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+
+      for (final task in toInsertOrUpdate) {
+        final docRef = _collection.doc(task.id);
+        batch.set(docRef, task.toFirestore(), SetOptions(merge: true));
+      }
+
+      for (final id in toDelete) {
+        final docRef = _collection.doc(id);
+        batch.delete(docRef);
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw ServerException('Batch sync failed in Firestore: $e');
     }
   }
 }

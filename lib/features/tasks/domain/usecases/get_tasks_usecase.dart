@@ -6,7 +6,7 @@ class GetTasksUseCase {
 
   GetTasksUseCase(this.repository);
 
-  Future<List<TaskEntity>> call() async {
-    return await repository.getTasks();
+  Future<List<TaskEntity>> call({String? userId}) async {
+    return await repository.getTasks(userId: userId);
   }
 }

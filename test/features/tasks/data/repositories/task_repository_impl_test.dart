@@ -5,6 +5,7 @@ import 'package:ethicfin_taskmanager/features/tasks/data/datasources/task_remote
 import 'package:ethicfin_taskmanager/features/tasks/data/models/task_model.dart';
 import 'package:ethicfin_taskmanager/features/tasks/data/repositories/task_repository_impl.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/enums/task_priority.dart';
+import 'package:ethicfin_taskmanager/features/tasks/domain/services/conflict_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -44,18 +45,20 @@ void main() {
       localDataSource: mockLocalDataSource,
       remoteDataSource: mockRemoteDataSource,
       networkInfo: mockNetworkInfo,
+      conflictResolver: const ConflictResolver(),
     );
   });
 
   group('getTasks', () {
     test('returns local tasks and checks connectivity', () async {
-      when(() => mockLocalDataSource.getTasks()).thenAnswer((_) async => [tTaskModel]);
+      when(() => mockLocalDataSource.getTasks(userId: any(named: 'userId')))
+          .thenAnswer((_) async => [tTaskModel]);
       when(() => mockNetworkInfo.isConnected).thenAnswer((_) async => false);
 
       final result = await repository.getTasks();
 
       expect(result, [tTaskModel]);
-      verify(() => mockLocalDataSource.getTasks()).called(1);
+      verify(() => mockLocalDataSource.getTasks(userId: null)).called(1);
     });
   });
 
@@ -89,27 +92,35 @@ void main() {
   });
 
   group('syncPendingTasks', () {
-    test('iterates through pending tasks and uploads to remote when online', () async {
+    test('syncs batch changes and pulls remote tasks when online', () async {
       final pendingTask = tTaskModel.copyWith(
         isSynced: false,
         syncAction: AppConstants.syncActionInsert,
       );
 
       when(() => mockNetworkInfo.isConnected).thenAnswer((_) async => true);
-      when(() => mockLocalDataSource.getPendingSyncTasks())
+      when(() => mockLocalDataSource.getPendingSyncTasks(userId: any(named: 'userId')))
           .thenAnswer((_) async => [pendingTask]);
-      when(() => mockRemoteDataSource.createTask(any())).thenAnswer((_) async {});
+      when(() => mockRemoteDataSource.syncBatch(
+            toInsertOrUpdate: any(named: 'toInsertOrUpdate'),
+            toDelete: any(named: 'toDelete'),
+          )).thenAnswer((_) async {});
       when(() => mockLocalDataSource.markAsSynced('repo-test-1'))
           .thenAnswer((_) async {});
-      when(() => mockRemoteDataSource.getTasks()).thenAnswer((_) async => [tTaskModel]);
+      when(() => mockRemoteDataSource.getTasks(userId: any(named: 'userId')))
+          .thenAnswer((_) async => [tTaskModel]);
+      when(() => mockLocalDataSource.getTasks(userId: any(named: 'userId')))
+          .thenAnswer((_) async => [tTaskModel]);
       when(() => mockLocalDataSource.saveFromRemote(any())).thenAnswer((_) async {});
 
       await repository.syncPendingTasks();
 
-      verify(() => mockRemoteDataSource.createTask(any())).called(1);
+      verify(() => mockRemoteDataSource.syncBatch(
+            toInsertOrUpdate: [pendingTask],
+            toDelete: [],
+          )).called(1);
       verify(() => mockLocalDataSource.markAsSynced('repo-test-1')).called(1);
-      verify(() => mockRemoteDataSource.getTasks()).called(1);
-      verify(() => mockLocalDataSource.saveFromRemote([tTaskModel])).called(1);
+      verify(() => mockRemoteDataSource.getTasks(userId: null)).called(1);
     });
   });
 }

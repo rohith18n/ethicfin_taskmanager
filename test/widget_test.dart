@@ -1,5 +1,8 @@
 import 'package:ethicfin_taskmanager/core/network/network_info.dart';
 import 'package:ethicfin_taskmanager/core/theme/theme_cubit.dart';
+import 'package:ethicfin_taskmanager/features/auth/domain/entities/user_entity.dart';
+import 'package:ethicfin_taskmanager/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ethicfin_taskmanager/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/usecases/create_task_usecase.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/usecases/delete_task_usecase.dart';
 import 'package:ethicfin_taskmanager/features/tasks/domain/usecases/get_tasks_usecase.dart';
@@ -20,18 +23,27 @@ class MockDeleteTaskUseCase extends Mock implements DeleteTaskUseCase {}
 class MockToggleTaskCompletionUseCase extends Mock implements ToggleTaskCompletionUseCase {}
 class MockSyncTasksUseCase extends Mock implements SyncTasksUseCase {}
 class MockNetworkInfo extends Mock implements NetworkInfo {}
+class MockAuthBloc extends Mock implements AuthBloc {}
 
 void main() {
   late MockGetTasksUseCase mockGetTasksUseCase;
   late MockNetworkInfo mockNetworkInfo;
+  late MockAuthBloc mockAuthBloc;
 
   setUp(() {
     mockGetTasksUseCase = MockGetTasksUseCase();
     mockNetworkInfo = MockNetworkInfo();
+    mockAuthBloc = MockAuthBloc();
+
     when(() => mockNetworkInfo.isConnected).thenAnswer((_) async => true);
     when(() => mockNetworkInfo.onConnectivityChanged)
         .thenAnswer((_) => const Stream.empty());
-    when(() => mockGetTasksUseCase()).thenAnswer((_) async => []);
+    when(() => mockGetTasksUseCase(userId: any(named: 'userId'))).thenAnswer((_) async => []);
+    when(() => mockAuthBloc.state).thenReturn(const AuthState(
+      status: AuthStatus.authenticated,
+      user: UserEntity(id: 'test-user-1', email: 'test@example.com', displayName: 'Test User'),
+    ));
+    when(() => mockAuthBloc.stream).thenAnswer((_) => const Stream.empty());
   });
 
   testWidgets('TaskMaster App smoke test', (WidgetTester tester) async {
@@ -49,6 +61,7 @@ void main() {
       MultiBlocProvider(
         providers: [
           BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+          BlocProvider<AuthBloc>.value(value: mockAuthBloc),
           BlocProvider<TaskBloc>.value(value: taskBloc),
         ],
         child: const MaterialApp(

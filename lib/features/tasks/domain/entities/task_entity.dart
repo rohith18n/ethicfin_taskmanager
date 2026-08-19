@@ -12,6 +12,7 @@ class TaskEntity extends Equatable {
   final DateTime updatedAt;
   final bool isSynced;
   final String syncAction;
+  final String? userId;
 
   const TaskEntity({
     required this.id,
@@ -24,6 +25,7 @@ class TaskEntity extends Equatable {
     required this.updatedAt,
     this.isSynced = true,
     this.syncAction = 'NONE',
+    this.userId,
   });
 
   TaskEntity copyWith({
@@ -37,6 +39,7 @@ class TaskEntity extends Equatable {
     DateTime? updatedAt,
     bool? isSynced,
     String? syncAction,
+    String? userId,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -49,6 +52,7 @@ class TaskEntity extends Equatable {
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
       syncAction: syncAction ?? this.syncAction,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -64,5 +68,6 @@ class TaskEntity extends Equatable {
         updatedAt,
         isSynced,
         syncAction,
+        userId,
       ];
 }
