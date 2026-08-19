@@ -4,6 +4,16 @@ A modern, production-grade, **offline-first Task Management Application** built 
 
 ---
 
+> 📱 **Need help or have questions while testing?** Contact: **+91 9061624061**  
+> 🔑 **Quick Test Options:**
+> - **Guest Mode**: Tap *"Continue as Guest"* for instant 1-tap entry.
+> - **Pre-configured Test Account**: Email: `test@gmail.com` | Password: `test@123`
+> - **New Registration**: Tap *"Sign Up"* with any dummy email & password.
+> 
+> Detailed instructions are in [TESTING_NOTES.md](file:///Users/rohith_n/Documents/tasks/ethicfin_taskmanager/TESTING_NOTES.md).
+
+---
+
 ## ✨ Features
 
 ### 🔐 1. Firebase Authentication & User Isolation
