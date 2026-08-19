@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "13266334210",
+    "project_id": "ethicfin-task-manager-4ca74",
+    "storage_bucket": "ethicfin-task-manager-4ca74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:13266334210:android:8dc01c937d4d9f7153ed1b",
+        "android_client_info": {
+          "package_name": "com.example.ethicfin_taskmanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUNnhDRGGKH-UhgAdanTd5_5KQkmu-p70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
